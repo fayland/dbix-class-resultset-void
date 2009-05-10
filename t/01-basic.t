@@ -20,6 +20,7 @@ my $rs = Schema->connect->resultset('Item');
 
 {   # new, with void context
     $rs->find_or_create( { id => 1, name => 'A' } );
+#    diag($Schema::ioscalar);
     ok( $Schema::ioscalar =~ /COUNT\(\s*\*\s*\)/ );
     my $row = $rs->find(1);
     ok($row);
@@ -45,7 +46,6 @@ my $rs = Schema->connect->resultset('Item');
     
     $Schema::ioscalar = '';
     $row = $rs->update_or_create( { id => 2, name => 'B' } );
-    diag($Schema::ioscalar);
     ok( $Schema::ioscalar !~ /COUNT\(\s*\*\s*\)/ );
     ok($row);
     is $row->id, 2;

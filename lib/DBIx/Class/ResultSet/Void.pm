@@ -18,30 +18,76 @@ use base qw(DBIx::Class::ResultSet);
         title  => 'Mezzanine',
     } );
 
-As ResultSet subclass in Schema pm:
+As ResultSet subclass in Schema.pm:
 
     __PACKAGE__->load_namespaces(
         default_resultset_class => '+DBIx::Class::ResultSet::Void'
     );
 
-Or use base in ResultSet/XXX.pm
+Or in Schema/CD.pm
+
+    __PACKAGE__->resultset_class('DBIx::Class::ResultSet::Void');
+
+Or in ResultSet/CD.pm
 
     use base 'DBIx::Class::ResultSet::Void';
 
 =head1 DESCRIPTION
 
-unless defined wantarray
+The API is the same as L<DBIx::Class::ResultSet>.
+
+use C<count> instead of C<find> unless defined wantarray.
 
 =head1 METHODS
+
+=over 4
+
+=item * find_or_create
+
+L<DBIx::Class::ResultSet/find_or_create>:
+
+    $rs->find_or_create( { id => 1, name => 'A' } );
+
+produces SQLs like:
+
+    # SELECT me.id, me.name FROM item me WHERE ( me.id = ? ): '1'
+    # INSERT INTO item ( id, name) VALUES ( ?, ? ): '1', 'A'
+
+but indeed COUNT(*) is performing a little better than me.id, me.name
+
+this module L<DBIx::Class::ResultSet::Void> produces SQLs like:
+
+    # SELECT COUNT( * ) FROM item me WHERE ( me.id = ? ): '1'
+    # INSERT INTO item ( id, name) VALUES ( ?, ? ): '1', 'A'
+
+we would delegate it DBIx::Class::ResultSet under context like:
+
+    my $row = $rs->find_or_create( { id => 1, name => 'A' } );
+
+=item * update_or_create
+
+L<DBIx::Class::ResultSet/update_or_create>:
+
+    $rs->update_or_create( { id => 1, name => 'B' } );
+
+produces SQLs like:
+
+    # SELECT me.id, me.name FROM item me WHERE ( me.id = ? ): '1'
+    # UPDATE item SET name = ? WHERE ( id = ? ): 'B', '1'
+
+this module:
+
+    # SELECT COUNT( * ) FROM item me WHERE ( me.id = ? ): '1'
+    # UPDATE item SET name = ? WHERE ( id = ? ): 'B', '1'
+
+=back
 
 =cut
 
 sub find_or_create {
   my $self     = shift;
   
-  if ( defined wantarray ) {
-    return $self->next::method(@_);
-  }
+  return $self->next::method(@_) if ( defined wantarray );
   
   my $attrs    = (@_ > 1 && ref $_[$#_] eq 'HASH' ? pop(@_) : {});
   my $hash     = ref $_[0] eq 'HASH' ? shift : {@_};
@@ -54,9 +100,7 @@ sub find_or_create {
 sub update_or_create {
   my $self = shift;
   
-  if ( defined wantarray ) {
-    return $self->next::method(@_);
-  }
+  return $self->next::method(@_) if ( defined wantarray );
   
   my $attrs = (@_ > 1 && ref $_[$#_] eq 'HASH' ? pop(@_) : {});
   my $cond = ref $_[0] eq 'HASH' ? shift : {@_};
@@ -65,7 +109,15 @@ sub update_or_create {
   my $exists = $self->count($query);
 
   if ( $exists ) {
-    $self->search($query)->update($cond);
+    # dirty hack, to remove WHERE cols from SET
+    my $query_array = ref $query eq 'ARRAY' ? $query : [ $query ];
+    foreach my $_query ( @$query_array ) {
+        foreach my $_key (keys %$_query) {
+            delete $cond->{$_key};
+            delete $cond->{$1} if $_key =~ /\w+\.(\w+)/; # $alias.$col
+        }
+    }
+    $self->search($query)->update($cond) if keys %$cond;
   } else {
     $self->create($cond);
   }
