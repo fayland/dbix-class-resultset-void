@@ -11,11 +11,10 @@ use base qw(DBIx::Class::ResultSet);
 
 =head1 SYNOPSIS
  
-    my $rs = $schema->resultset('XXX');
-    
+    my $rs = $schema->resultset('CD');
     $rs->count_or_create( {
-        id => 1,
-        name => 'B'
+        artist => 'Massive Attack',
+        title  => 'Mezzanine',
     } );
 
 As ResultSet subclass in Schema pm:
@@ -59,18 +58,34 @@ sub count_or_create {
 
 =back
 
-
   my $cd = $schema->resultset('CD')->count_or_create( {
       artist => 'Massive Attack',
       title  => 'Mezzanine',
   } );
 
-like L<find_or_create>. but it only returns $rowobject if the record is created, or else, $cd is 0 when the record is already there.
+like L<find_or_create>. but it return 0 if COUNT return true, or else, create the data and return $rowobject
 
 =cut
 
 sub count_for_update_or_create {
-
+    
 }
+
+=pod
+
+=head2 count_for_update_or_create
+
+=over 4
+
+=item Arguments: \%col_values, { key => $unique_constraint }?
+
+=item Return Value: 0 or $rowobject
+
+=back
+
+  $resultset->update_or_create({ col => $val, ... });
+
+
+=cut
 
 1;
