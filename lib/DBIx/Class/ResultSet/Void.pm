@@ -38,7 +38,7 @@ The API is the same as L<DBIx::Class::ResultSet>.
 
 use C<count> instead of C<find> unless defined wantarray.
 
-=head1 METHODS
+=head2 METHODS
 
 =over 4
 
