@@ -28,11 +28,20 @@ use base 'DBIx::Class::Schema';
 
 __PACKAGE__->load_classes('Item');
 
+####### output debug
+use IO::Scalar;
+
 sub connect {
   my $class = shift;
   unlink('t/test.db') if(-e 't/test.db');
   my $schema = $class->next::method('dbi:SQLite::memory:');
   $schema->deploy;
+  
+  # debug
+  my $fh = new IO::Scalar \$Schema::ioscalar;
+  $schema->storage->debug(1);
+  $schema->storage->debugfh($fh);
+  
   return $schema;
 }
 
