@@ -1,4 +1,7 @@
 Revision history for Perl extension DBIx-Class-ResultSet-Void
 
+0.02    2009.05.10
+        fix version
+
 0.01    2009.05.10
         a start
