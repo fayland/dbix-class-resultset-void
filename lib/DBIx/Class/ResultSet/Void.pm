@@ -36,7 +36,7 @@ Or in ResultSet/CD.pm
 
 The API is the same as L<DBIx::Class::ResultSet>.
 
-use C<search($query, { rows => 1, select => [1] })-&gt;single;> instead of C<find> unless defined wantarray.
+use C<search($query, { rows =&gt; 1, select =&gt; [1] })-&gt;single;> instead of C<find> unless defined wantarray.
 
 (Thank ribasushi to tell me C<count> is bad)
 
