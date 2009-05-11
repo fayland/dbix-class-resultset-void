@@ -36,7 +36,9 @@ Or in ResultSet/CD.pm
 
 The API is the same as L<DBIx::Class::ResultSet>.
 
-use C<count> instead of C<find> unless defined wantarray.
+use C<search($query, { rows => 1, select => [1] })-&gt;single;> instead of C<find> unless defined wantarray.
+
+(Thank ribasushi to tell me C<count> is bad)
 
 =head2 METHODS
 
@@ -53,11 +55,11 @@ produces SQLs like:
     # SELECT me.id, me.name FROM item me WHERE ( me.id = ? ): '1'
     # INSERT INTO item ( id, name) VALUES ( ?, ? ): '1', 'A'
 
-but indeed COUNT(*) is performing a little better than me.id, me.name
+but indeed C<SELECT 1 ...  LIMIT 1> is performing a little better than me.id, me.name
 
 this module L<DBIx::Class::ResultSet::Void> produces SQLs like:
 
-    # SELECT COUNT( * ) FROM item me WHERE ( me.id = ? ): '1'
+    # SELECT 1 FROM item me WHERE ( me.id = ? ) LIMIT 1: '1'
     # INSERT INTO item ( id, name) VALUES ( ?, ? ): '1', 'A'
 
 we would delegate it DBIx::Class::ResultSet under context like:
@@ -77,7 +79,7 @@ produces SQLs like:
 
 this module:
 
-    # SELECT COUNT( * ) FROM item me WHERE ( me.id = ? ): '1'
+    # SELECT 1 FROM item me WHERE ( me.id = ? ) LIMIT 1: '1'
     # UPDATE item SET name = ? WHERE ( id = ? ): 'B', '1'
 
 =back
@@ -93,7 +95,7 @@ sub find_or_create {
   my $hash     = ref $_[0] eq 'HASH' ? shift : {@_};
   
   my $query  = $self->___get_primary_or_unique_key($hash, $attrs);
-  my $exists = $self->count($query);
+  my $exists = $self->search($query, { rows => 1, select => [1] })->single;
   $self->create($hash) unless $exists;
 }
 
@@ -106,7 +108,7 @@ sub update_or_create {
   my $cond = ref $_[0] eq 'HASH' ? shift : {@_};
 
   my $query  = $self->___get_primary_or_unique_key($cond, $attrs);
-  my $exists = $self->count($query);
+  my $exists = $self->search($query, { rows => 1, select => [1] })->single;
 
   if ( $exists ) {
     # dirty hack, to remove WHERE cols from SET
