@@ -1,5 +1,8 @@
 Revision history for Perl extension DBIx-Class-ResultSet-Void
 
+0.06    2009.05.20
+        .t fixes
+
 0.05    2009.05.20
         add C<exists>
 
